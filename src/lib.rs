@@ -37,9 +37,7 @@ impl Rope {
 
     /// Returns an `Iterator` over the lines of a `Rope`.
     pub fn lines(&self) -> Lines {
-        Lines {
-            graphemes: self.graphemes()
-        }
+        Lines { graphemes: self.graphemes() }
     }
 
     /// Concatenates two ropes together and returns a new `Rope`.
@@ -140,7 +138,7 @@ impl Rope {
 
 /// An `Iterator` over the lines of a `Rope`.
 pub struct Lines<'a> {
-    graphemes: Graphemes<'a>
+    graphemes: Graphemes<'a>,
 }
 
 impl<'a> Iterator for Lines<'a> {
@@ -156,11 +154,7 @@ impl<'a> Iterator for Lines<'a> {
             }
         }
 
-        if line.len() > 0 {
-            Some(line)
-        } else {
-            None
-        }
+        if line.len() > 0 { Some(line) } else { None }
     }
 }
 
@@ -230,22 +224,18 @@ impl From<&'static str> for Rope {
 mod test {
     use super::*;
 
-    macro_rules! node {
-        ( $s:expr, $l:expr, $r:expr ) => {
-            Rope::Node($s, Box::from(Rope::from($l)), Box::from(Rope::from($r)))
-        };
+    fn node<T: Into<Rope>, U: Into<Rope>>(size: usize, left: T, right: U) -> Rope {
+        Rope::Node(size, Box::from(left.into()), Box::from(right.into()))
     }
 
-    macro_rules! leaf {
-        ( $s:expr ) => {
-            Rope::Leaf($s.into())
-        };
+    fn leaf<T: Into<String>>(val: T) -> Rope {
+         Rope::Leaf(val.into())
     }
 
     fn create_rope() -> Rope {
-        node!(6,
-              node!(3, "foo", "bar"),
-              node!(3, "baz", node!(4, "fizz", "buzz")))
+        node(6,
+             node(3, "foo", "bar"),
+             node(3, "baz", node(4, "fizz", "buzz")))
     }
 
     #[test]
@@ -258,42 +248,42 @@ mod test {
 
     #[test]
     fn to_string() {
-        let rope = node!(4, "test", " string");
+       let rope = node(4, "test", " string");
 
-        assert_eq!(rope.to_string(), "test string");
-    }
+       assert_eq!(rope.to_string(), "test string");
+   }
 
-    #[test]
-    fn height() {
-        let left = leaf!("foo");
-        assert_eq!(left.height(), 1);
+   #[test]
+   fn height() {
+       let left = leaf("foo");
+       assert_eq!(left.height(), 1);
 
-        let right = node!(3, "bar", "baz");
-        assert_eq!(right.height(), 2);
+       let right = node(3, "bar", "baz");
+       assert_eq!(right.height(), 2);
 
-        let rope = node!(3, left, right);
+        let rope = node(3, left, right);
         assert_eq!(rope.height(), 3);
     }
 
     #[test]
     fn length() {
-        let left = leaf!("foo");
+        let left = leaf("foo");
         assert_eq!(left.length(), 3);
 
-        let right = node!(3, "bar", "baz");
+        let right = node(3, "bar", "baz");
         assert_eq!(right.length(), 6);
 
-        let rope = node!(3, left, right);
+        let rope = node(3, left, right);
         assert_eq!(rope.length(), 9);
 
-        assert_eq!(node!(5, "a̐éö̲\r\n", "éö̲\r").length(), 8);
+        assert_eq!(node(5, "a̐éö̲\r\n", "éö̲\r").length(), 8);
         assert_eq!(Rope::new("a̐éö̲\r\n").length(), 4);
     }
 
     #[test]
     fn concat() {
-        let second = node!(3, "baz", "biz");
-        let third = node!(4, "fizz", "buzz");
+        let second = node(3, "baz", "biz");
+        let third = node(4, "fizz", "buzz");
 
         let mut rope = Rope::new("foo").concat("bar");
         assert_eq!(rope.height(), 2);
@@ -313,14 +303,14 @@ mod test {
 
     #[test]
     fn strings() {
-        let mut rope = node!(3, "foo", "bar");
+        let mut rope = node(3, "foo", "bar");
 
         {
             let strings = rope.strings().collect::<Vec<_>>();
             assert_eq!(strings, vec!["foo", "bar"]);
         }
 
-        rope = node!(6, node!(3, "foo", "bar"), "baz");
+        rope = node(6, node(3, "foo", "bar"), "baz");
         assert_eq!(9, rope.length());
 
         {
@@ -341,7 +331,7 @@ mod test {
         let expected: Vec<_> = "foobarbazfizzbuzz".chars().map(|c| c.to_string()).collect();
         assert_eq!(graphemes, expected);
 
-        let rope = node!(5, "a̐éö̲\r\n", "éö̲\r");
+        let rope = node(5, "a̐éö̲\r\n", "éö̲\r");
         let graphemes: Vec<_> = rope.graphemes().collect();
         let expected = vec!["a̐", "é", "ö̲", "\r\n", "é", "ö̲", "\r"];
         assert_eq!(graphemes, expected);
@@ -349,7 +339,7 @@ mod test {
 
     #[test]
     fn split() {
-        let rope = node!(3, "foo", "bar");
+        let rope = node(3, "foo", "bar");
 
         let (left, right) = rope.clone().split(3);
         assert_eq!(left.to_string(), "foo");
